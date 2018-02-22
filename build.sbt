@@ -1,3 +1,5 @@
+val sourcingVersion = "0.10.1"
+
 val wesoValidatorVersion            = "0.0.65-nexus1"
 val metricsCoreVersion              = "3.2.6"
 val jenaVersion                     = "3.6.0"
@@ -17,6 +19,8 @@ val akkaHttpCirceVersion            = "1.19.0"
 val elasticSearchVersion            = "6.1.2"
 val log4jVersion                    = "2.10.0"
 val commonsIOVersion                = "1.3.2"
+
+lazy val sourcingAkka = "ch.epfl.bluebrain.nexus" %% "sourcing-akka" % sourcingVersion
 
 lazy val catsCore           = "org.typelevel"                   %% "cats-core"                           % catsVersion
 lazy val circeCore          = "io.circe"                        %% "circe-core"                          % circeVersion
@@ -69,48 +73,15 @@ lazy val types = project
     libraryDependencies ++= Seq(catsCore, circeCore, scalaTest % Test)
   )
 
-lazy val sourcing = project
-  .in(file("modules/sourcing/core"))
-  .dependsOn(types)
-  .settings(publishSettings)
-  .settings(
-    name                := "sourcing-core",
-    moduleName          := "sourcing-core",
-    libraryDependencies ++= Seq(catsCore, scalaTest % Test)
-  )
-
-lazy val sourcingAkka = project
-  .in(file("modules/sourcing/akka"))
-  .dependsOn(sourcing % "compile->compile;test->test")
-  .settings(publishSettings)
-  .settings(
-    name       := "sourcing-akka",
-    moduleName := "sourcing-akka",
-    libraryDependencies ++= Seq(
-      shapeless,
-      akkaPersistence,
-      akkaPersistenceQuery,
-      akkaClusterSharding,
-      akkaTestKit          % Test,
-      akkaPersistenceInMem % Test,
-      scalaTest            % Test
-    )
-  )
-
-lazy val sourcingMem = project
-  .in(file("modules/sourcing/mem"))
-  .dependsOn(sourcing % "compile->compile;test->test")
-  .settings(publishSettings)
-  .settings(name := "sourcing-mem", moduleName := "sourcing-mem", libraryDependencies ++= Seq(scalaTest % Test))
-
 lazy val service = project
   .in(file("modules/service"))
-  .dependsOn(types, http, sourcingAkka % "test->compile")
+  .dependsOn(types, http)
   .settings(publishSettings)
   .settings(
     name       := "commons-service",
     moduleName := "commons-service",
     libraryDependencies ++= Seq(
+      sourcingAkka,
       shapeless,
       akkaActor,
       akkaDistributedData,
@@ -262,9 +233,6 @@ lazy val root = project
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
   .aggregate(types,
-             sourcing,
-             sourcingAkka,
-             sourcingMem,
              http,
              test,
              service,
